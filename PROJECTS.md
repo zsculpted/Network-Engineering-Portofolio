@@ -4,7 +4,7 @@ A collection of my networking projects, practical labs, configurations, troubles
 
 ## Cisco Networking
 
-*Projects coming soon.*
+- [VLAN and Trunking](Cisco-Networking/VLAN-and-Trunking.md)
 
 ## Fortinet
 
