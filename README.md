@@ -4,9 +4,10 @@ Welcome to my Network Engineering Portfolio!
 
 This repository showcases my networking knowledge, practical lab exercises, configurations, and technical projects as I continue developing my skills in network engineering.
 
-## View My Projects Here !!
+## Project Directory
 
-[LINK..................]
+
+[Click This to View All of My Projects](PROJECTS.md)
 
 ## About Me
 
