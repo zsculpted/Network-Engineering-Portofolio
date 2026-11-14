@@ -8,7 +8,7 @@ A collection of my networking projects, practical labs, configurations, troubles
 
 ## Fortinet
 
-*Projects coming soon.*
+- [Configuring Admin, Password, Password Secrutiy, 2MFA](FortiGate/Configuring-Admin-Password-and-2FA.md)
 
 ## Aruba
 
