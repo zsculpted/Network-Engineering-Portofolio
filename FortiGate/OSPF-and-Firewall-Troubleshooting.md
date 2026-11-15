@@ -87,7 +87,7 @@ config firewall address
 end
 
 config firewall policy
-    edit 0
+    edit 1
         set name "R4-LAN"
         set srcintf "port5"
         set dstintf "port2" "port3"
@@ -121,5 +121,38 @@ The successful ping test confirmed that communication between the networks was n
 
 **HOWERVER, ANOTHER PROBLEM OCCUR**. PCs on LAN1 can't reach PCs on LAN2 while the ping were successful on LAN2 to LAN1.
 
+## Troubleshoot 2
 
+At first, I thought every traffic leaving port5 through port2 or port3 meaning every packet entering port5 by those port will automatically forwarded as well. Turns out this is another FortiGate rules. The configuration I did above only permits new sessions initiated from LAN2 toward LAN1. 
 
+Below is the previous firewall policy (edit 1), I did change the policy name into 'LAN2-LAN1' to give more clarity.
+
+<img width="759" height="408" alt="image" src="https://github.com/user-attachments/assets/e5cd1575-b4c1-4d8c-8101-3ef595564338" />
+
+I then proceed to configure reverse firewall policy.
+
+```bash
+config firewall policy
+    edit 2
+        set name "LAN1-to-LAN2"
+        set srcintf "port2" "port3"
+        set dstintf "port5"
+        set srcaddr ALL
+        set dstaddr "LAN-10.0.0.0"
+        set action accept
+        set schedule "always"
+        set service "ALL"
+        set nat disable
+    next
+end
+```
+
+**Resutlts:**
+
+<img width="756" height="714" alt="image" src="https://github.com/user-attachments/assets/fa7187f8-c5c8-4bce-9bab-90705e13cc3f" />
+
+<img width="1457" height="283" alt="image" src="https://github.com/user-attachments/assets/b39eb401-919b-4c2b-b293-d183da240b7c" />
+
+I then proceed to go to a PC in LAN1 and try to ping VPC on LAN2 and it was **successful** as shown below!
+
+<img width="935" height="217" alt="image" src="https://github.com/user-attachments/assets/904d7223-b159-4b91-8737-404fec3a5dfd" />
