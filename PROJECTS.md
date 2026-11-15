@@ -9,7 +9,7 @@ A collection of my networking projects, practical labs, configurations, troubles
 ## Fortinet
 
 - [Configuring Admin, Password, Password Secrutiy, 2MFA](FortiGate/Configuring-Admin-Password-and-2FA.md)
-- [OSPF FortiGate Troubleshooting](FortiGate/Different-OSPF-Areas-Connectivity-and-Firewall-Troubleshooting.md)
+- [Different OSPF Areas Connectivity and FortiGate Firewall Policy Troubleshooting](FortiGate/Different-OSPF-Areas-Connectivity-and-Firewall-Troubleshooting.md)
 
 ## Aruba
 
