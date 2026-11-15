@@ -12,11 +12,9 @@ Initially, I thought OSPF worked the same way as a traditional router, where hav
 
 As you can see from the picture above, Fortinate2 able to reach both LAN without any problem, however when both LAN try to connect to one another, that's when the isse occur.
 
-<img width="797" height="151" alt="image" src="https://github.com/user-attachments/assets/482850b7-ae14-417e-9c02-8e73eba61349" />
+When I try to **ping tests** from LAN2 to LAN1 or vice versa, the ping were **unsuccessful**.
 
-The screenshot shows that **ping tests** from R4 to the 10.0.0.0/24 LAN were **unsuccessful**.
-
-**It turns out that the issue was related to the FortiGate firewall policies**, which were preventing traffic from being forwarded between the LAN interfaces. 
+**It turns out that the issue was related to the FortiGate firewall policies**, which were preventing traffic from being forwarded between interfaces. 
 
 ## Troubleshooting
 
@@ -24,7 +22,7 @@ The screenshot shows that **ping tests** from R4 to the 10.0.0.0/24 LAN were **u
 
 I started by checking the OSPF neighbor relationships on Fprtinet2 to ensure that the interfaces participating in OSPF had successfully established adjacency.
 
-In this topology, Port 2 and Port 3 are assigned to Area 0, while Port 5 is assigned to Area 10. I wanted to verify that the OSPF configuration on FortiGate 2 was functioning as expected before investigating the connectivity issue.
+In this topology, port2 and port3 are assigned to Area 0, while port5 is assigned to Area 10. I wanted to verify that the OSPF configuration on Fortinet2 was functioning as expected, before I start investigating the connectivity issue.
 
 **Commands:**
 
@@ -34,7 +32,7 @@ In this topology, Port 2 and Port 3 are assigned to Area 0, while Port 5 is assi
 
 <img width="755" height="268" alt="image" src="https://github.com/user-attachments/assets/d244984c-1497-4a8e-b367-1149f873d8cd" />
 
-The ospf neighbor info clearly shows that the expected adjacencies were established.
+The ospf neighbor info clearly shows that the expected adjacency were established.
 
 ### 2. Verify the Routing Table on Fortinate2
 
@@ -82,7 +80,7 @@ To resolve the issue, I configured a firewall policy to permit communication bet
 config firewall address
     edit "LAN-10.0.0.0"
         set type ipmask
-        set subnet 10.0.0.0 255.255.255.0
+        set subnet 10.0.0.0 255.255.0.0
     next
 end
 
