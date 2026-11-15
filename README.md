@@ -7,7 +7,7 @@ This repository showcases my networking knowledge, practical lab exercises, conf
 ## Project Directory
 
 
-[Click This to View All of My Projects](PROJECTS.md)
+[Click Here to View All of My Projects](PROJECTS.md)
 
 ## About Me
 
