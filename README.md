@@ -21,6 +21,18 @@ In addition to my CCNA, I hold **Fortinet NSE 1–3 certifications**. I am curre
 
 This portfolio documents my knowledge and hands-on experience across various areas of network engineering through practical labs and technical projects. Detailed documentation, configurations, and project implementations can be found in the project contents below.
 
+## My Lab Environment
+
+As we probably know, the best way to learn networking is to build it, break it, and figure out how to fix it, so I put together my own virtual lab where I can freely experiment without worrying about crashing a real network.
+
+Here is what I use to power my labs:
+
+- Emulation & Simulation Platforms: Currently I'm using PNETLab and Cisco Packet Tracer
+  
+- Network OS & Images I Work With: Cisco VIOS, Arista vEOS, ArubaCX, Juniper, Linux & VPCS
+
+- Additional Tools: Wireshark
+
 ## Contact Me
 
 - Email: Zeinalaydrus19@gmail.com
