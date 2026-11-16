@@ -10,7 +10,7 @@ A collection of my networking projects, practical labs, configurations, troubles
 
 ## Security, FortiGate
 
-- [Configuring Admin, Password, Password Secrutiy, 2MFA](FortiGate/Configuring-Admin-Password-and-2FA.md)
-- [Different OSPF Areas Connectivity and FortiGate Firewall Policy Troubleshooting](FortiGate/Different-OSPF-Areas-Connectivity-and-Firewall-Troubleshooting.md)
+- [Configuring Admin, Password, Password Secrutiy, 2MFA](Security/Configuring-Admin-Password-and-2FA.md)
+- [Different OSPF Areas Connectivity and FortiGate Firewall Policy Troubleshooting](Security/Different-OSPF-Areas-Connectivity-and-Firewall-Troubleshooting.md)
 
 
