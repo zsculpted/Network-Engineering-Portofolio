@@ -4,7 +4,7 @@ A collection of my networking projects, practical labs, configurations, troubles
 
 ## Layer 2 Networking
 
-- [VLAN and Trunking](Cisco-Networking/VLAN-and-Trunking.md)
+- [Layer 2 Networking 1](Network-Warrior/Layer-2-Networking-1.md)
 
 ## Layer 3 Networking
 
