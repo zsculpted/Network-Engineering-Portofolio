@@ -108,7 +108,7 @@ and the GUI policy page, where **Inspection Mode shows Flow-based**. When I temp
 
 <img width="959" height="405" alt="image" src="https://github.com/user-attachments/assets/b439ccc4-6d12-4629-80ce-8d842b28b32c" />
 
-Firefox on the Linux node also fails: websites show "Server Not Found", and even the lab gateway page at `192.168.1.1` would not open.
+Firefox on the Linux node also fails: websites show "Server Not Found", and even the lab gateway page at `192.168.1.1` would not open. Below I tried to open _wikipedia.com_. 
 
 <img width="1008" height="570" alt="Screenshot 2026-11-16 160115" src="https://github.com/user-attachments/assets/f5838f05-f72f-4374-be19-93861efcdc13" />
 
