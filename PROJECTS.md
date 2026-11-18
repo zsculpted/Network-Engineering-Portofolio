@@ -6,8 +6,8 @@ A collection of my networking projects, practical labs, configurations, troubles
 
 - [Layer 2 Networking | 3-Tier Swicthing Architecture](Network-Warrior/Layer-2-Networking-1.md)
 
-## Layer 3 Networking
-- 
+## Layer 3 - 4 Networking
+- [Exploring Border Gateway Protocol (BGP)](Network-Warrior/Border-Gateway-Protocol-Pt1.md)
 
 ## Security, FortiGate
 
