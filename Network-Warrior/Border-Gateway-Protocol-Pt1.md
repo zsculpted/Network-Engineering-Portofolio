@@ -8,7 +8,7 @@ Company A (AS 65001) has a headquarters in Jakarta and two branch offices (Surab
 
 ## Initial Topology
 
-<img width="660" height="590" alt="image" src="https://github.com/user-attachments/assets/42f1906a-a187-4ab6-bcf0-5a2e89db9c24" />
+<img width="657" height="593" alt="image" src="https://github.com/user-attachments/assets/19e5ed95-d3ce-4164-ad91-1543f16dee70" />
 
 This topology will evolve as the lab grows. 
 
@@ -24,8 +24,6 @@ I'm using the **private 16-bit ASN range (64512 to 65534)**.
 | INTERNET *(planned)* | **65100** | INTERNET |
 
 ### IP Addressing
-
-<img width="657" height="593" alt="image" src="https://github.com/user-attachments/assets/19e5ed95-d3ce-4164-ad91-1543f16dee70" />
 
 #### ISP Routers
 
