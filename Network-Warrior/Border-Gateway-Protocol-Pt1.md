@@ -23,45 +23,45 @@ I'm using the **private 16-bit ASN range (64512 to 65534)**.
 | ISP-BETA | **65020** | ISP-BETA |
 | INTERNET *(planned)* | **65100** | INTERNET |
 
-### IP Addressing 
+### IP Addressing
 
 #### ISP Routers
 
-| Router | Interface | IP Address |
-|---|---|---|
-| ISP-Alpha | Gi0/0 | 172.16.10.1/30 |
-| ISP-BETA | Gi0/0 | 172.16.20.1/30 |
+| Router | Interface | IP Address | OSPF Area |
+|---|---|---|---|
+| ISP-Alpha | Gi0/0 | 172.16.10.1/30 | None |
+| ISP-BETA | Gi0/0 | 172.16.20.1/30 | None |
 
 #### HQ Edge Routers
 
-| Router | Interface | IP Address |
-|---|---|---|
-| EDGE-1 | Gi0/0 | 172.16.10.2/30 |
-| EDGE-1 | Gi0/1 | 10.1.1.1/30 |
-| EDGE-1 | Gi0/2 | 10.1.2.1/30 |
-| EDGE-2 | Gi0/0 | 172.16.20.2/30 |
-| EDGE-2 | Gi0/1 | 10.1.3.1/30 |
-| EDGE-2 | Gi0/2 | 10.1.4.1/30 |
+| Router | Interface | IP Address | OSPF Area |
+|---|---|---|---|
+| EDGE-1 | Gi0/0 | 172.16.10.2/30 | None (eBGP link) |
+| EDGE-1 | Gi0/1 | 10.1.1.1/30 | 0 |
+| EDGE-1 | Gi0/2 | 10.1.2.1/30 | 0 |
+| EDGE-2 | Gi0/0 | 172.16.20.2/30 | None (eBGP link) |
+| EDGE-2 | Gi0/1 | 10.1.3.1/30 | 0 |
+| EDGE-2 | Gi0/2 | 10.1.4.1/30 | 0 |
 
 #### HQ Route Reflectors
 
-| Router | Interface | IP Address |
-|---|---|---|
-| RR1 | Gi0/0 | 10.1.1.2/30 |
-| RR1 | Gi0/1 | 10.1.3.2/30 |
-| RR1 | Gi0/2 | 10.1.11.1/30 |
-| RR1 | Gi0/3 | 10.1.5.1/30 |
-| RR2 | Gi0/0 | 10.1.2.2/30 |
-| RR2 | Gi0/1 | 10.1.4.2/30 |
-| RR2 | Gi0/2 | 10.1.12.1/30 |
-| RR2 | Gi0/3 | 10.1.5.2/30 |
+| Router | Interface | IP Address | OSPF Area |
+|---|---|---|---|
+| RR1 | Gi0/0 | 10.1.1.2/30 | 0 |
+| RR1 | Gi0/1 | 10.1.3.2/30 | 0 |
+| RR1 | Gi0/2 | 10.1.11.1/30 | 10 |
+| RR1 | Gi0/3 | 10.1.5.1/30 | 0 |
+| RR2 | Gi0/0 | 10.1.2.2/30 | 0 |
+| RR2 | Gi0/1 | 10.1.4.2/30 | 0 |
+| RR2 | Gi0/2 | 10.1.12.1/30 | 10 |
+| RR2 | Gi0/3 | 10.1.5.2/30 | 0 |
 
 #### Branch Routers
 
-| Router | Interface | IP Address |
-|---|---|---|
-| BR-SBY | Gi0/0 | 10.1.11.2/30 |
-| BR-BDG | Gi0/0 | 10.1.12.2/30 |
+| Router | Interface | IP Address | OSPF Area |
+|---|---|---|---|
+| BR-SBY | Gi0/0 | 10.1.11.2/30 | 10 |
+| BR-BDG | Gi0/0 | 10.1.12.2/30 | 10 |
 
 ### Routing Summary (ASN, OSPF, BGP role)
 
