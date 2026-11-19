@@ -141,41 +141,73 @@ show ip bgp summary
 
 I was looking at the **State/PfxRcd** column. If it says Idle or Active, the session isn't up yet. If it shows a number, the session is **Established** and that number is how many prefixes were received. I expected **0 prefixes** at this point, which **shown** on the **picture above** nobody is advertising anything yet, so an empty table here means **success**, not failure.
 
-### Step 2: iBGP With the Route Reflectors
+### *Update: Adding Loopbacks
+
+In my first plan I left loopbacks out because I thought they'd take extra time and wouldn't add much. I changed my mind, because iBGP is normally built **between loopbacks** rather than link IPs, and I just remember If I peer on a link IP and that single cable fails, the iBGP session dies with it. 
+
+Good thing I quickly recall this before I start the iBGP prcess so I can just add loopbakcs before continueing my work. Btw I added a loopback only on the four routers that run iBGP (EDGE-1, EDGE-2, RR1, RR2) to save some time (_obviously in real job I'd add loopbakcs on every router to protect the connection of the routing protocols_).
+
+#### Loopback Addressing
+
+Loopbacks only on the routers that run iBGP. The branches and the ISPs don't need one. I use them as the iBGP peering addresses, and each is also advertised in OSPF area 0 so the other routers can reach it.
+
+| Router | Interface | IP Address | OSPF Area |
+|---|---|---|---|
+| EDGE-1 | Lo0 | 1.1.1.1/32 | 0 |
+| EDGE-2 | Lo0 | 2.2.2.2/32 | 0 |
+| RR1 | Lo0 | 3.3.3.3/32 | 0 |
+| RR2 | Lo0 | 4.4.4.4/32 | 0 |
+
+ 
+Before configuring BGP, I confirmed that the loopbacks could reach each other and it sure did. 
+
+```
+ping 4.4.4.4 source Loopback0
+```
+
+As you can see in the picture above Lo0 from HQ-EDGE1 is successfully able to ping RR2 Lo0.
+
+<img width="931" height="166" alt="image" src="https://github.com/user-attachments/assets/6bf8237c-8dc8-4752-88b2-d826935f56ea" />
+
+### Step 2: Configuring iBGP With the Route Reflectors
 
 The edges now know about their ISPs, but the rest of Company A doesn't know BGP exists. In this step I built the **iBGP** sessions inside AS 65001 so the edges can share what they learn.
 
-What I've learned, the thing with iBGP is that a router never passes a route learned from one iBGP peer to another iBGP peer. Without a workaround, every BGP router would need a session with every other one (a full mesh). Instead, I made **RR1 and RR2 route reflectors**, which are allowed to re-advertise iBGP routes. **EDGE-1 and EDGE-2 are their clients**, and the two reflectors peer with each other. The Surabaya and Bandung branches don't run BGP, so I left them alone.
+What I've learned, the thing with iBGP is that a router never passes a route learned from one iBGP peer to another iBGP peer. Without a workaround, every BGP router would need a session with every other one (a full mesh). Instead, I made **RR1 and RR2 route reflectors**, which are allowed to **re-advertise** iBGP routes. **EDGE-1 and EDGE-2 are their clients**, and the two reflectors peer with each other. The **Surabaya and Bandung** branches don't run BGP, so I left them alone.
 
-I didn't use loopbacks for this lab because I configure everything all at the same time, and making table here or typing addresses on PnetLab would take so much time, so each session runs over the **direct link IPs** between the two routers. That works because both ends are on the same /30. Since the ASN is the same on both sides (65001), these are **iBGP** sessions.
+**Here's the full list of iBGP sessions in Company A.**
 
-| Session | Router | Neighbor IP | Role of neighbor |
+| Router | Neighbor | Neighbor IP | Neighbor's role |
 |---|---|---|---|
-| EDGE-1 ↔ RR1 | EDGE-1 | 10.1.1.2 | Route reflector |
-| | RR1 | 10.1.1.1 | Client |
-| EDGE-1 ↔ RR2 | EDGE-1 | 10.1.2.2 | Route reflector |
-| | RR2 | 10.1.2.1 | Client |
-| EDGE-2 ↔ RR1 | EDGE-2 | 10.1.3.2 | Route reflector |
-| | RR1 | 10.1.3.1 | Client |
-| EDGE-2 ↔ RR2 | EDGE-2 | 10.1.4.2 | Route reflector |
-| | RR2 | 10.1.4.1 | Client |
-| RR1 ↔ RR2 | RR1 | 10.1.5.2 | Regular iBGP peer (non-client) |
-| | RR2 | 10.1.5.1 | Regular iBGP peer (non-client) |
+| EDGE-1 | RR1 | 3.3.3.3 | Route reflector |
+| EDGE-1 | RR2 | 4.4.4.4 | Route reflector |
+| EDGE-2 | RR1 | 3.3.3.3 | Route reflector |
+| EDGE-2 | RR2 | 4.4.4.4 | Route reflector |
+| RR1 | EDGE-1 | 1.1.1.1 | Client |
+| RR1 | EDGE-2 | 2.2.2.2 | Client |
+| RR1 | RR2 | 4.4.4.4 | Regular iBGP peer (non-client) |
+| RR2 | EDGE-1 | 1.1.1.1 | Client |
+| RR2 | EDGE-2 | 2.2.2.2 | Client |
+| RR2 | RR1 | 3.3.3.3 | Regular iBGP peer (non-client) |
 
-For the edges, I pointed each one at both RRs. Both are configured as plain neighbors, because the edge doesn't need to know it's a client. Only the RR does.
+#### iBGP Configurations
 
 **EDGE-1 (AS 65001)**
 ```
 router bgp 65001
- neighbor 10.1.1.2 remote-as 65001
- neighbor 10.1.2.2 remote-as 65001
+ neighbor 3.3.3.3 remote-as 65001
+ neighbor 3.3.3.3 update-source Loopback0
+ neighbor 4.4.4.4 remote-as 65001
+ neighbor 4.4.4.4 update-source Loopback0
 ```
 
 **EDGE-2 (AS 65001)**
 ```
 router bgp 65001
- neighbor 10.1.3.2 remote-as 65001
- neighbor 10.1.4.2 remote-as 65001
+ neighbor 3.3.3.3 remote-as 65001
+ neighbor 3.3.3.3 update-source Loopback0
+ neighbor 4.4.4.4 remote-as 65001
+ neighbor 4.4.4.4 update-source Loopback0
 ```
 
 On the route reflectors, I added the edges as **clients** with the `route-reflector-client` line. That one line is what makes a router a reflector for that neighbor.
@@ -183,21 +215,27 @@ On the route reflectors, I added the edges as **clients** with the `route-reflec
 **RR1 (AS 65001)**
 ```
 router bgp 65001
- neighbor 10.1.1.1 remote-as 65001
- neighbor 10.1.1.1 route-reflector-client
- neighbor 10.1.3.1 remote-as 65001
- neighbor 10.1.3.1 route-reflector-client
- neighbor 10.1.5.2 remote-as 65001
+ neighbor 1.1.1.1 remote-as 65001
+ neighbor 1.1.1.1 update-source Loopback0
+ neighbor 1.1.1.1 route-reflector-client
+ neighbor 2.2.2.2 remote-as 65001
+ neighbor 2.2.2.2 update-source Loopback0
+ neighbor 2.2.2.2 route-reflector-client
+ neighbor 4.4.4.4 remote-as 65001
+ neighbor 4.4.4.4 update-source Loopback0
 ```
 
 **RR2 (AS 65001)**
 ```
 router bgp 65001
- neighbor 10.1.2.1 remote-as 65001
- neighbor 10.1.2.1 route-reflector-client
- neighbor 10.1.4.1 remote-as 65001
- neighbor 10.1.4.1 route-reflector-client
- neighbor 10.1.5.1 remote-as 65001
+ neighbor 1.1.1.1 remote-as 65001
+ neighbor 1.1.1.1 update-source Loopback0
+ neighbor 1.1.1.1 route-reflector-client
+ neighbor 2.2.2.2 remote-as 65001
+ neighbor 2.2.2.2 update-source Loopback0
+ neighbor 2.2.2.2 route-reflector-client
+ neighbor 3.3.3.3 remote-as 65001
+ neighbor 3.3.3.3 update-source Loopback0
 ```
 
 The link between RR1 and RR2 has **no** `route-reflector-client` line on purpose. They're equals, not client and reflector.
@@ -208,26 +246,20 @@ The link between RR1 and RR2 has **no** `route-reflector-client` line on purpose
 show ip bgp summary
 ```
 
-I expected to see:
+<img width="1919" height="1016" alt="image" src="https://github.com/user-attachments/assets/fbed780f-dc9e-4d18-a163-05b569d81235" />
 
-| Router | Established neighbors expected |
-|---|---|
-| EDGE-1 | 3 (ISP-Alpha, RR1, RR2) |
-| EDGE-2 | 3 (ISP-BETA, RR1, RR2) |
-| RR1 | 3 (EDGE-1, EDGE-2, RR2) |
-| RR2 | 3 (EDGE-1, EDGE-2, RR1) |
+As you can see in the BGP neighbor table summary up there, every connection is established.
 
-To confirm the reflector setup, I ran this on an RR:
+Also to confirm the reflector setup, I ran this on an RR:
 
 ```
-show ip bgp neighbors 10.1.1.1 | include Route-Reflector
+show run| sec Route-Reflector
 ```
 
-It should mention "Route-Reflector Client" for the edge neighbors. As in Step 1, **0 prefixes** is expected, because nothing is being advertised yet.
+<img width="961" height="386" alt="image" src="https://github.com/user-attachments/assets/1622d8b7-81ba-4b74-9675-6d4a3b01730c" />
 
-...
+I did that to confirm that borth edge router is `route-reflector-client`.
 
+### Step 3
 
-#### What's next
-
-Right now every session is up but there is nothing to see. In **Step 3**, I'll advertise something into BGP so the tables stop being empty, and in **Step 4** I'll deal with the `next-hop-self` problem.
+_to be continued_
