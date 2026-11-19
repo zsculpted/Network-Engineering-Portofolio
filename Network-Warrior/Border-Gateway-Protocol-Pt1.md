@@ -54,3 +54,17 @@ For the company A branches (BR-SBY, BR-BDG) I only run OSPF (AREA 10). The other
 
 ## BGP Configuration
 
+**Quick note before we dive in:** all the necessary groundwork is already done. I already completes the IP addressing, loopbacks, OSPF, and the area design so we can move straight to the BGP configuration. 
+
+**Starting point (already working):**
+- All interfaces and loopbacks are configured and reachable
+- OSPF is up inside Company A (area 0 for HQ, area 10 for the branches)
+- Every Company A router can ping every other Company A router's Lo0
+- ISP-Alpha and ISP-BETA have their IPs configured, and nothing else yet
+
+**What I'll configure here:**
+1. eBGP between the edges and the ISPs
+2. iBGP with route reflectors inside Company A
+3. Prefix advertisement
+4. The `next-hop-self` fix (spoiler: I expect to get this wrong the first time)
+
