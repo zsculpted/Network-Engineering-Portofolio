@@ -90,7 +90,11 @@ For the company A branches (BR-SBY, BR-BDG) I only run OSPF (AREA 10). The other
 - Every Company A router can ping every other Company A router's Lo0
 - ISP-Alpha and ISP-BETA have their IPs configured, and nothing else yet
 
-**What I'll configure here:**
+<img width="928" height="176" alt="image" src="https://github.com/user-attachments/assets/11e3be8b-efcf-4f32-b914-f0281a1969a9" />
+
+**As an example**, as you can see Surabaya Branch (BR-SBY - OSPF Area 10) were able to ping Edge 2 Gi0/2 of Jakarta's HQ (HQ-EDGE2 -  OSPF Area 0) without any problem
+
+**What I'll configure Next:**
 1. eBGP between the edges and the ISPs
 2. iBGP with route reflectors inside Company A
 3. Prefix advertisement
