@@ -4,7 +4,7 @@ I’ve completed my CCNA, but most of what I studied covered interior routing pr
 
 ## The Scenario
 
-Company A (AS 65001) has a headquarters in Jakarta and two branch offices (Surabaya and Bandung). The HQ connects to the internet through two ISPs for redundancy. Inside the company, OSPF handles internal routing. At the edge, eBGP talks to the ISPs, and iBGP (with route reflectors) shares what the edge routers learn.
+**_Company A (AS 65001)_** has a headquarters in Jakarta and two branch offices (Surabaya and Bandung). The HQ connects to the internet through two ISPs for redundancy. Inside the company, OSPF handles internal routing. At the edge, eBGP talks to the ISPs, and iBGP (with route reflectors) shares what the edge routers learn.
 
 ## Initial Topology
 
