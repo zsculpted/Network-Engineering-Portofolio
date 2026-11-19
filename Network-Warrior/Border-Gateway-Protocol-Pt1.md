@@ -23,19 +23,7 @@ I'm using the **private 16-bit ASN range (64512 to 65534)**.
 | ISP-BETA | **65020** | ISP-BETA |
 | INTERNET *(planned)* | **65100** | INTERNET |
 
-### IP Addressing Plan
-
-Three address pools, so I can tell at a glance what an IP belongs to:
-
-| Pool | Used for |
-|---|---|
-| `10.1.0.0/16` | Company A internal links (/30s) |
-| `10.255.0.0/24` | Company A loopbacks (/32s): router IDs and iBGP peering |
-| `172.16.0.0/16` | ISP-side links and ISP loopbacks (everything outside Company A) |
-
-Every link is a /30. The lower address (.1) goes to the "upstream" side.
-
-#### Link Addressing
+### IP and Link Addressing Plan
 
 | # | Device A | Int A | IP A | Device B | Int B | IP B | Subnet | Protocol |
 |---|---|---|---|---|---|---|---|---|
