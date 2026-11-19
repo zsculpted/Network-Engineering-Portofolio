@@ -149,8 +149,6 @@ Good thing I quickly recall this before I start the iBGP prcess so I can just ad
 
 #### Loopback Addressing
 
-Loopbacks only on the routers that run iBGP. The branches and the ISPs don't need one. I use them as the iBGP peering addresses, and each is also advertised in OSPF area 0 so the other routers can reach it.
-
 | Router | Interface | IP Address | OSPF Area |
 |---|---|---|---|
 | EDGE-1 | Lo0 | 1.1.1.1/32 | 0 |
