@@ -49,25 +49,20 @@ Every link is a /30. The lower address (.1) goes to the "upstream" side.
 | 8 | RR1 | Gi0/2 | 10.1.11.1/30 | BR-SBY | Gi0/0 | 10.1.11.2/30 | `10.1.11.0/30` | OSPF |
 | 9 | RR2 | Gi0/2 | 10.1.12.1/30 | BR-BDG | Gi0/0 | 10.1.12.2/30 | `10.1.12.0/30` | OSPF |
 
+### Routing Summary (ASN, OSPF, BGP role)
 
-#### Loopback Addressing
+For the company A branches (BR-SBY, BR-BDG) I only run OSPF (AREA 10). The other BGP plan (iBGP and eBGP) will look like the table below.
 
-| Device | Interface | IP Address | Purpose |
-|---|---|---|---|
-| EDGE-1 | Lo0 | 10.255.0.1/32 | Router ID, iBGP peering |
-| EDGE-1 | Lo100 | 203.0.113.1/24 | Company A public block |
-| EDGE-2 | Lo0 | 10.255.0.2/32 | Router ID, iBGP peering |
-| EDGE-2 | Lo100 | 203.0.113.2/24 | Company A public block |
-| RR1 | Lo0 | 10.255.0.11/32 | Router ID, iBGP peering |
-| RR2 | Lo0 | 10.255.0.12/32 | Router ID, iBGP peering |
-| BR-SBY | Lo0 | 10.255.0.21/32 | Router ID |
-| BR-SBY | Lo10 | 10.2.0.1/24 | Surabaya "LAN" |
-| BR-BDG | Lo0 | 10.255.0.22/32 | Router ID |
-| BR-BDG | Lo10 | 10.3.0.1/24 | Bandung "LAN" |
-| ISP-Alpha | Lo0 | 172.16.255.10/32 | Router ID |
-| ISP-Alpha | Lo1 | 198.51.100.1/24 | Test "internet" prefix (also on ISP-BETA) |
-| ISP-Alpha | Lo2 | 192.0.2.1/24 | Test "internet" prefix (Alpha only) |
-| ISP-BETA | Lo0 | 172.16.255.20/32 | Router ID |
-| ISP-BETA | Lo1 | 198.51.100.1/24 | Test "internet" prefix (also on ISP-Alpha) |
+| Router | ASN | Router ID (Lo0) | OSPF area | BGP role | BGP neighbors |
+|---|---|---|---|---|---|
+| EDGE-1 | 65001 | 10.255.0.1 | 0 | Edge, RR client | eBGP: ISP-Alpha. iBGP: RR1, RR2 |
+| EDGE-2 | 65001 | 10.255.0.2 | 0 | Edge, RR client | eBGP: ISP-BETA. iBGP: RR1, RR2 |
+| RR1 | 65001 | 10.255.0.11 | 0 and 10 (ABR) | Route reflector | iBGP: EDGE-1, EDGE-2 (clients), RR2 |
+| RR2 | 65001 | 10.255.0.12 | 0 and 10 (ABR) | Route reflector | iBGP: EDGE-1, EDGE-2 (clients), RR1 |
+| BR-SBY | 65001 | 10.255.0.21 | 10 | None | None (OSPF only) |
+| BR-BDG | 65001 | 10.255.0.22 | 10 | None | None (OSPF only) |
+| ISP-Alpha | 65010 | 172.16.255.10 | None | External provider | eBGP: EDGE-1 |
+| ISP-BETA | 65020 | 172.16.255.20 | None | External provider | eBGP: EDGE-2 |
 
-_to be continued_
+## BGP Configuration
+
