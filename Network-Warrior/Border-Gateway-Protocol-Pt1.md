@@ -67,7 +67,7 @@ That's all for the IP Addressing, next we're moving to the real thing, that is B
 
 ## BGP Configuration
 
-**Quick note before we dive in:** all the necessary groundwork is already done. I already completes the IP addressing, loopbacks, OSPF, and the area design so we can move straight to the BGP configuration. 
+**Quick note:** all the necessary groundwork is already done. I already completes the IP addressing, loopbacks, OSPF, and the area design so we can move straight to the BGP configuration. 
 
 **Starting point (already working):**
 - All interfaces and loopbacks are configured and reachable
