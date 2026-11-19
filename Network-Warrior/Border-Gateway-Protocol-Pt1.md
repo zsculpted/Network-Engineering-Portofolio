@@ -25,6 +25,8 @@ I'm using the **private 16-bit ASN range (64512 to 65534)**.
 
 ### IP Addressing
 
+<img width="657" height="593" alt="image" src="https://github.com/user-attachments/assets/19e5ed95-d3ce-4164-ad91-1543f16dee70" />
+
 #### ISP Routers
 
 | Router | Interface | IP Address | OSPF Area |
@@ -63,7 +65,7 @@ I'm using the **private 16-bit ASN range (64512 to 65534)**.
 | BR-SBY | Gi0/0 | 10.1.11.2/30 | 10 |
 | BR-BDG | Gi0/0 | 10.1.12.2/30 | 10 |
 
-### Routing Summary (ASN, OSPF, BGP role)
+### Summary (ASN, OSPF, BGP role)
 
 For the company A branches (BR-SBY, BR-BDG) I only run OSPF (AREA 10). The other BGP plan (iBGP and eBGP) will look like the table below.
 
