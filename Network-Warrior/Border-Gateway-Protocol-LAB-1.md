@@ -510,61 +510,8 @@ ping 9.9.9.9
 
 he packet went DMZ-SRV → RR1 → an edge → an ISP → INTERNET, and the reply came back because INTERNET learned `203.0.113.0/24` through BGP from both ISPs. Inside Company A, the edges know the specific route to my server (`203.0.113.0/28` through OSPF), so the reply finds its way back to DMZ-SRV.
 
-### Step 5: Choosing Between the ISPs and Testing Failover
-
-Now that both ISPs lead to the same destinations, Company A has two paths to `8.8.8.8` and `9.9.9.9`. This is the BGP concept that made me want to build the lab.
-
-#### What happens by default
-
-With no tuning, each edge tends to use the path through **its own ISP**. Both paths have the same Local Preference (100) and the same AS_PATH length (`65010 65100` vs `65020 65100`), so BGP falls to a tie-breaker: a route learned over eBGP beats one learned over iBGP.
-
-#### Making ISP-Alpha the preferred exit with Local Preference
-
-I wanted all of Company A to exit through ISP-Alpha, with ISP-BETA as the backup. At first when I did traceroute 8.8.8.8 on DMZ SRV, it seems like ISP-BETA is the prefered route.
-
-<img width="933" height="202" alt="image" src="https://github.com/user-attachments/assets/4655a99c-8705-467d-b007-9942864e26cc" />
-
-To change that I used **Local Preference**: a higher number wins, the default is 100, and it's shared with every iBGP router, so the whole AS agrees on the exit. I set it to 200 on the routes EDGE-1 learns from ISP-Alpha.
-
-**EDGE-1 (AS 65001)**
-```
-route-map PREFER-ALPHA permit 10
- set local-preference 200
-!
-router bgp 65001
- neighbor 172.16.10.1 route-map PREFER-ALPHA in
-```
-```
-clear ip bgp 172.16.10.1 soft in
-```
-
-I did traceroute on DMZ-SRV as well as `show ip bgp 8.8.8.8` on EDGE-2, now it showed the best path going through EDGE-1 (next hop `1.1.1.1`) with local preference 200, even though EDGE-2 has its own direct path to ISP-BETA. Local Preference is checked before the "prefer eBGP" tie-breaker, so it wins.
-
-<img width="931" height="188" alt="image" src="https://github.com/user-attachments/assets/542edcdb-9e2c-4d90-83d0-7dec75852d02" />
-
-<img width="931" height="490" alt="image" src="https://github.com/user-attachments/assets/04ea67ec-53f2-4b00-a054-262645c4fdd2" />
-
-
-
-#### Failover test and troubleshooting scenario
-
-To simulate ISP-Alpha going down, I shut the link on EDGE-1:
-
-```
-interface GigabitEthernet0/0
- shutdown
-```
-
-The eBGP session to ISP-Alpha dropped, the routes were withdrawn, and `show ip bgp 8.8.8.8` on both edges switched to the ISP-BETA path. While this was happening, I kept pinging `8.8.8.8` from DMZ-SRV. It lost a few packets during the switch, then recovered on its own. Then I ran `no shutdown` and watched everything move back to ISP-Alpha. I didn't change any configuration to make it happen, and that automatic failover is the whole reason BGP and multihoming exist.
-
-One thing I noticed: Local Preference only controls **outbound** traffic, meaning how Company A leaves. How the internet reaches **me** is decided by INTERNET and the ISPs. Influencing that needs something like AS_PATH prepending, which is on my list below.
-
-<!-- Paste output from before, during, and after the shutdown here -->
-
----
-
 ## Troubleshooting Scenarios
 
 I learned an L1 engineer spends more time noticing and fixing BGP rather than building it. So next time I want to create scenario and broke some connection on purpose to try to the fix. 
 
-_to be continued_
+**So I make a separate page for that**. [CLICK HERE to see my BGP Lab 1: Path Selection, Failover, and Troubleshooting work](Network-Warrior/BGP-LAB-1-Troubleshooting-Scenario.md)
