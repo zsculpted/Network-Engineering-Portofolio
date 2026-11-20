@@ -1,4 +1,4 @@
-# Exploring BGP
+# Exploring and Building BGP
 
 I’ve completed my CCNA, but most of what I studied covered interior routing protocols like OSPF. When I started researching Junior / L1 Network Engineer roles, I kept seeing BGP, eBGP, and iBGP in the job requirements. **This lab is my way of closing that gap** by showcasing my ability to configure and verify BGP sessions, reading the BGP table, and troubleshooting when sessions or routes go missing.
 
@@ -8,9 +8,12 @@ I’ve completed my CCNA, but most of what I studied covered interior routing pr
 
 ## Initial Topology
 
-<img width="657" height="593" alt="image" src="https://github.com/user-attachments/assets/19e5ed95-d3ce-4164-ad91-1543f16dee70" />
+<img width="1280" height="1222" alt="image" src="https://github.com/user-attachments/assets/f7aeff68-ab5c-438d-af98-050abb860877" />
 
-This topology will evolve as the lab grows. 
+**This is how i put it on lab environemnt.** 
+This topology will evolve as the lab grows and will pretty much changes over the course. 
+
+<img width="628" height="622" alt="Screenshot 2026-11-18 211819" src="https://github.com/user-attachments/assets/f2fbc94b-8452-4017-bff3-dc903c957f57" />
 
 ### Autonomous System Numbers
 
@@ -328,10 +331,129 @@ I checked `show ip bgp summary` on each ISP and on INTERNET, and every session c
 <img width="1899" height="1016" alt="image" src="https://github.com/user-attachments/assets/1b75ca65-5491-4e3e-a822-d25c3fc797a3" />
 
 
-#### 3b. Advertising Company A's public block
+#### 3b. Advertising Company A's Public Block
 
-At first I was confused about how a router can announce a prefix when the interface isn't "in BGP." The thing I learned is that BGP doesn't run on interfaces. The `network` command just says: *if this prefix is in my routing table, put it in my BGP table and announce it to my neighbors.* That's how INTERNET announces its loopback networks, since each loopback is a connected route.
+At first I was confused about how a router can announce a prefix when the interface isn't "in BGP." The thing I learned is that BGP doesn't run on interfaces. Rather, we have to configure the network prefix on our routing table to our BGP neighbor.
 
-Company A needs something to announce too, and it should be its **public block**, not an internal loopback. Nobody announces internal router loopbacks to an ISP, and ISPs filter anything longer than a /24 anyway. I used a **static route to Null0** as the anchor. Null0 is a discard interface, so the route exists without any real device behind it, and real companies do this when they announce a block.
+**Where a real company's public block comes from.** I also had the wrong idea about what a company announces. Nobody announces an internal router like loopback adressess to an ISP. A company that needs BGP gets its **own public block** (and its own ASN) from the internet registries. The smallest block the internet accepts is a **/24**, because ISPs filter anything longer, that also something I just discovered.
 
-_to be contd_
+**For this lab I'm using `203.0.113.0/24` as Company A's block.**
+
+**Where the block actually lives.** This surprised me: the block is *not* configured on the interface facing the ISP. That link keeps the small /30 the ISP gave me, and it only carries the BGP session. 
+
+##### Updated Topology
+
+<img width="834" height="742" alt="image" src="https://github.com/user-attachments/assets/e69944f7-d924-4a88-aa2d-f22b790f598b" />
+
+
+| What | Real network | My lab |
+|---|---|---|
+| Who announces the `/24` to the ISPs | The edge routers | EDGE-1 (to ISP-Alpha) and EDGE-2 (to ISP-BETA) |
+| Where the block's addresses are used | A firewall's DMZ interface, plus the servers behind it | RR1 Gi0/4 (`203.0.113.1/28`) and DMZ-SRV (`203.0.113.10/28`) |
+| Unused addresses in the block | Dropped by a Null0 route on the edges | Dropped by a Null0 route on both edges |
+| Firewall between the edges and the DMZ | Yes | Not included, to keep the lab small |
+
+- My internal routers (the RRs and the branches) keep their private `10.x.x.x` addresses. The edges don't hold the block on any interface. They just **announce** the whole `/24`.
+- **How I mapped that to my lab.** I don't have a firewall, so I built a small DMZ: one server device (**DMZ-SRV**) connected to RR1 on a new interface, using the first piece of the block.
+
+| Device | Interface | IP Address | Notes |
+|---|---|---|---|
+| RR1 | Gi0/4 | 203.0.113.1/28 | DMZ gateway |
+| DMZ-SRV | Gi0/0 | 203.0.113.10/28 | Default gateway: 203.0.113.1 |
+
+The `203.0.113.0/28` subnet is my DMZ, and the rest of the `/24` is spare.
+_
+I skipped the firewall to keep the lab small, and RR1 is also carrying DMZ traffic, though a real route reflector wouldn't. Just to keep this simple._
+
+**The Null0 route.** Each edge has a static route for the whole `/24` pointing at **Null0**, a built-in discard interface. The reason:
+
+1. **It lets BGP announce the block.** The edges will learn `203.0.113.0/28` through RR1 vi OSPF, but they don't have the whole `/24`, so the Null0 route is what creates it.
+2. **It drops traffic for unused addresses.** In a real network, traffic for an address nobody uses would otherwise follow the default route back to the ISP, and the ISP would send it right back, **looping** until the TTL runs out, and we don't want that.
+
+I first worried that this would also drop traffic for my real server, turns out it doesn't, because routers always pick the **longest matching prefix**, not the first or lowest-AD route.
+
+##### Step 3b Configuration
+
+**RR1 (AS 65001)**
+```
+interface GigabitEthernet0/4
+ description To DMZ-SRV
+ ip address 203.0.113.1 255.255.255.240
+ ip ospf 1 area 50
+ no shutdown
+```
+
+**DMZ-SRV**
+```
+interface GigabitEthernet0/0
+ ip address 203.0.113.10 255.255.255.240
+ no shutdown
+!
+ip route 0.0.0.0 0.0.0.0 203.0.113.1
+```
+
+**EDGE-1 (AS 65001)**
+```
+ip route 203.0.113.0 255.255.255.0 Null0
+!
+router bgp 65001
+ network 203.0.113.0 mask 255.255.255.0
+!
+ip route 203.0.113.0 255.255.255.0 Null0
+```
+
+**EDGE-2 (AS 65001)**
+```
+ip route 203.0.113.0 255.255.255.0 Null0
+!
+router bgp 65001
+ network 203.0.113.0 mask 255.255.255.0
+!
+ip route 203.0.113.0 255.255.255.0 Null0
+```
+
+DMZ-SRV doesn't run OSPF. RR1 advertises the connected `/28` into area 0 for it, which is all the edges need. INTERNET already announces `8.8.8.8/32` and `9.9.9.9/32` from step 3a.
+
+| Router | Prefix | What it represents |
+|---|---|---|
+| EDGE-1 | 203.0.113.0/24 | Company A's public block, announced to ISP-Alpha |
+| EDGE-2 | 203.0.113.0/24 | Company A's public block, announced to ISP-BETA |
+| INTERNET | 8.8.8.8/32 and 9.9.9.9/32 | The rest of the internet |
+
+Both edges announce the **same** block. That's what **multihoming** means: the internet can reach Company A through either ISP.
+
+#### Checking that it worked
+
+First, the inside of Company A. On both edges:
+
+```
+show ip route 203.0.113.10
+show ip route 203.0.113.99
+```
+`203.0.113.99` is a made-up address that no device in my lab uses, and I picked it only as a test to see if the route is correct.
+
+<img width="937" height="383" alt="image" src="https://github.com/user-attachments/assets/61d072f7-c002-4f98-84f2-0f5579225c23" />
+
+<img width="950" height="378" alt="image" src="https://github.com/user-attachments/assets/ef4ec6a5-4514-4710-b74d-6c6427b9f180" />
+
+As it shown above, `203.0.113.10` is match with the `/28` learned through OSPF (`O`), pointing at RR1. That's the **specific** route to my server. Meanwhile `203.0.113.99` is match only with the static route to **Null0**, which proves unused addresses in the block get dropped.
+
+Then BGP:
+
+```
+show ip bgp
+show ip bgp summary
+```
+**Both Edges**
+<img width="1919" height="495" alt="image" src="https://github.com/user-attachments/assets/06440e6d-3c24-4ab3-b4ff-b878ae2bbd89" />
+**Both HQ-RR**
+<img width="1919" height="496" alt="image" src="https://github.com/user-attachments/assets/58ab6dbc-2b02-4383-b64e-89c7b07d50a7" />
+**Both ISP**
+<img width="1895" height="508" alt="image" src="https://github.com/user-attachments/assets/6eced275-5dd7-4ea0-94bf-726b79a26af3" />
+**Internet**
+<img width="937" height="502" alt="image" src="https://github.com/user-attachments/assets/cd3750e5-41e1-4b51-945d-9772039925d5" />
+
+
+That HQ-RR routersl is the interesting part. The RRs trust `203.0.113.0/24`, because it was created inside my AS and the next hop is an edge they can reach. But the internet routes still point at an ISP address (`172.16.10.1` or `172.16.20.1`) that the RRs have no route to. Fixing that is Step 4.
+
+_to be ctd_
