@@ -514,4 +514,6 @@ he packet went DMZ-SRV → RR1 → an edge → an ISP → INTERNET, and the repl
 
 I learned an L1 engineer spends more time noticing and fixing BGP rather than building it. So next time I want to create scenario and broke some connection on purpose to try to the fix. 
 
-**So I make a separate page for that**. [CLICK HERE to see my BGP Lab 1: Path Selection, Failover, and Troubleshooting work](Network-Warrior/BGP-LAB-1-Troubleshooting-Scenario.md)
+**So I make a separate page for that**. 
+
+[BGP LAB 1 - Path Selection and Troubleshooting Scenario](PROJECTS.md)
