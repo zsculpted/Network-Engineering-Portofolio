@@ -11,7 +11,7 @@ I’ve completed my CCNA, but most of what I studied covered interior routing pr
 <img width="1280" height="1222" alt="image" src="https://github.com/user-attachments/assets/f7aeff68-ab5c-438d-af98-050abb860877" />
 
 **This is how i put it on lab environemnt.** 
-This topology will evolve as the lab grows and will pretty much changes over the course. 
+This topology will evolve as the lab grows and will pretty much changes over the course (Coming from the furute: _the topology above already updated_!). 
 
 <img width="628" height="622" alt="Screenshot 2026-11-18 211819" src="https://github.com/user-attachments/assets/f2fbc94b-8452-4017-bff3-dc903c957f57" />
 
@@ -28,43 +28,8 @@ I'm using the **private 16-bit ASN range (64512 to 65534)**.
 
 ### IP Addressing
 
-#### ISP Routers
+<img width="914" height="761" alt="image" src="https://github.com/user-attachments/assets/d1f33766-a817-425e-8821-fc742a1899f3" />
 
-| Router | Interface | IP Address | OSPF Area |
-|---|---|---|---|
-| ISP-Alpha | Gi0/0 | 172.16.10.1/30 | None |
-| ISP-BETA | Gi0/0 | 172.16.20.1/30 | None |
-
-#### HQ Edge Routers
-
-| Router | Interface | IP Address | OSPF Area |
-|---|---|---|---|
-| EDGE-1 | Gi0/0 | 172.16.10.2/30 | None (eBGP link) |
-| EDGE-1 | Gi0/1 | 10.1.1.1/30 | 0 |
-| EDGE-1 | Gi0/2 | 10.1.2.1/30 | 0 |
-| EDGE-2 | Gi0/0 | 172.16.20.2/30 | None (eBGP link) |
-| EDGE-2 | Gi0/1 | 10.1.3.1/30 | 0 |
-| EDGE-2 | Gi0/2 | 10.1.4.1/30 | 0 |
-
-#### HQ Route Reflectors
-
-| Router | Interface | IP Address | OSPF Area |
-|---|---|---|---|
-| RR1 | Gi0/0 | 10.1.1.2/30 | 0 |
-| RR1 | Gi0/1 | 10.1.3.2/30 | 0 |
-| RR1 | Gi0/2 | 10.1.11.1/30 | 10 |
-| RR1 | Gi0/3 | 10.1.5.1/30 | 0 |
-| RR2 | Gi0/0 | 10.1.2.2/30 | 0 |
-| RR2 | Gi0/1 | 10.1.4.2/30 | 0 |
-| RR2 | Gi0/2 | 10.1.12.1/30 | 10 |
-| RR2 | Gi0/3 | 10.1.5.2/30 | 0 |
-
-#### Branch Routers
-
-| Router | Interface | IP Address | OSPF Area |
-|---|---|---|---|
-| BR-SBY | Gi0/0 | 10.1.11.2/30 | 10 |
-| BR-BDG | Gi0/0 | 10.1.12.2/30 | 10 |
 
 That's all for the IP Addressing, next we're moving to the real thing, that is BGP. 
 
@@ -175,6 +140,8 @@ As you can see in the picture above Lo0 from HQ-EDGE1 is successfully able to pi
 The edges now know about their ISPs, but the rest of Company A doesn't know BGP exists. In this step I built the **iBGP** sessions inside AS 65001 so the edges can share what they learn.
 
 What I've learned, the thing with iBGP is that a router never passes a route learned from one iBGP peer to another iBGP peer. Without a workaround, every BGP router would need a session with every other one (a full mesh). Instead, I made **RR1 and RR2 route reflectors**, which are allowed to **re-advertise** iBGP routes. **EDGE-1 and EDGE-2 are their clients**, and the two reflectors peer with each other. The **Surabaya and Bandung** branches don't run BGP, so I left them alone.
+
+This is why I feel like it's only better if I add loopback address, something that I skip at the beginning.
 
 **Here's the full list of iBGP sessions in Company A.**
 
@@ -343,7 +310,7 @@ At first I was confused about how a router can announce a prefix when the interf
 
 ##### Updated Topology
 
-<img width="834" height="742" alt="image" src="https://github.com/user-attachments/assets/e69944f7-d924-4a88-aa2d-f22b790f598b" />
+<img width="827" height="789" alt="image" src="https://github.com/user-attachments/assets/17670b9d-cf0d-4f46-a005-68d741f9670a" />
 
 
 | What | Real network | My lab |
