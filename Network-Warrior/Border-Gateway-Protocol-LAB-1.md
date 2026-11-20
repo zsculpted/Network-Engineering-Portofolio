@@ -28,7 +28,8 @@ I'm using the **private 16-bit ASN range (64512 to 65534)**.
 
 ### IP Addressing
 
-<img width="825" height="739" alt="image" src="https://github.com/user-attachments/assets/31f3e16d-3c39-4834-9237-be9fef03cd00" />
+<img width="862" height="623" alt="image" src="https://github.com/user-attachments/assets/268bbd14-74bf-451b-93cc-5cec36587cd3" />
+
 
 That's all for the IP Addressing, next we're moving to the real thing, that is BGP. 
 
@@ -237,7 +238,7 @@ I added one router, **INTERNET (AS 65100)**, connected to both ISPs. To make it 
 
 The link between each ISP and INTERNET is a point-to-point /30, and I ran **eBGP** over it, the same way a real ISP connects to an upstream provider. It also gives me realistic AS_PATHs.
 
-<img width="683" height="744" alt="image" src="https://github.com/user-attachments/assets/6f7bcbd6-18a1-4016-9440-e888df0f5b43" />
+<img width="835" height="742" alt="image" src="https://github.com/user-attachments/assets/9f074e6b-cfb5-4696-bfc5-2304b94b6647" />
 
 | Link | Device A | IP A | Device B | IP B | Subnet | Protocol |
 |---|---|---|---|---|---|---|
@@ -299,6 +300,8 @@ I checked `show ip bgp summary` on each ISP and on INTERNET, and every session c
 
 #### 3b. Advertising Company A's Public Block
 
+<img width="847" height="741" alt="image" src="https://github.com/user-attachments/assets/e78fa1fd-f635-4a42-bf55-9097161d81e8" />
+
 At first I was confused about how a router can announce a prefix when the interface isn't "in BGP." The thing I learned is that BGP doesn't run on interfaces. Rather, we have to configure the network prefix on our routing table to our BGP neighbor.
 
 **Where a real company's public block comes from.** I also had the wrong idea about what a company announces. Nobody announces an internal router like loopback adressess to an ISP. A company that needs BGP gets its **own public block** (and its own ASN) from the internet registries. The smallest block the internet accepts is a **/24**, because ISPs filter anything longer, that also something I just discovered.
@@ -306,11 +309,6 @@ At first I was confused about how a router can announce a prefix when the interf
 **For this lab I'm using `203.0.113.0/24` as Company A's block.**
 
 **Where the block actually lives.** This surprised me: the block is *not* configured on the interface facing the ISP. That link keeps the small /30 the ISP gave me, and it only carries the BGP session. 
-
-##### Updated Topology
-
-<img width="827" height="789" alt="image" src="https://github.com/user-attachments/assets/17670b9d-cf0d-4f46-a005-68d741f9670a" />
-
 
 | What | Real network | My lab |
 |---|---|---|
