@@ -258,6 +258,80 @@ show run| sec Route-Reflector
 
 I did that to confirm that borth edge router is `route-reflector-client`.
 
-### Step 3
+### Step 3: Simulating the Internet and Advertising Prefixes
 
-_to be continued_
+After Step 2, every BGP session was sstablished but all the tables were empty. I needed something to advertise so I add one more router to 'mimic' the internet.
+
+#### 3a. Adding the internet side
+
+I added one router, **INTERNET (AS 65100)**, connected to both ISPs. To make it feel like the real internet, I gave it two loopbacks with famous-looking addresses, `8.8.8.8` and `9.9.9.9`. Initially I was plan to use `1.1.1.1` but I realise it is the EDGE-1's loopback0 address, using it would devinetly become a serous routing problem.
+
+The link between each ISP and INTERNET is a point-to-point /30, and I ran **eBGP** over it, the same way a real ISP connects to an upstream provider. It also gives me realistic AS_PATHs.
+
+<img width="683" height="744" alt="image" src="https://github.com/user-attachments/assets/6f7bcbd6-18a1-4016-9440-e888df0f5b43" />
+
+| Link | Device A | IP A | Device B | IP B | Subnet | Protocol |
+|---|---|---|---|---|---|---|
+| ISP-Alpha ↔ INTERNET | ISP-Alpha Gi0/1 | 172.16.100.1/30 | INTERNET Gi0/0 | 172.16.100.2/30 | `172.16.100.0/30` | eBGP |
+| ISP-BETA ↔ INTERNET | ISP-BETA Gi0/1 | 172.16.101.1/30 | INTERNET Gi0/1 | 172.16.101.2/30 | `172.16.101.0/30` | eBGP |
+
+| Router | Interface | IP Address | What it pretends to be |
+|---|---|---|---|
+| INTERNET | Lo8 | 8.8.8.8/24 | A well-known service out on the internet |
+| INTERNET | Lo9 | 9.9.9.9/24 | Another service out on the internet |
+
+**ISP-Alpha (AS 65010)**
+```
+interface GigabitEthernet0/1
+ ip address 172.16.100.1 255.255.255.252
+ no shutdown
+!
+router bgp 65010
+ neighbor 172.16.100.2 remote-as 65100
+```
+
+**ISP-BETA (AS 65020)**
+```
+interface GigabitEthernet0/1
+ ip address 172.16.101.1 255.255.255.252
+ no shutdown
+!
+router bgp 65020
+ neighbor 172.16.101.2 remote-as 65100
+```
+
+**INTERNET (AS 65100)**
+```
+interface GigabitEthernet0/0
+ ip address 172.16.100.2 255.255.255.252
+ no shutdown
+!
+interface GigabitEthernet0/1
+ ip address 172.16.101.2 255.255.255.252
+ no shutdown
+!
+interface Loopback8
+ ip address 8.8.8.8 255.255.255.255
+!
+interface Loopback9
+ ip address 9.9.9.9 255.255.255.255
+!
+router bgp 65100
+ neighbor 172.16.100.1 remote-as 65010
+ neighbor 172.16.101.1 remote-as 65020
+ network 8.8.8.8 mask 255.255.255.255
+ network 9.9.9.9 mask 255.255.255.255
+```
+
+I checked `show ip bgp summary` on each ISP and on INTERNET, and every session came up established.
+
+<img width="1899" height="1016" alt="image" src="https://github.com/user-attachments/assets/1b75ca65-5491-4e3e-a822-d25c3fc797a3" />
+
+
+#### 3b. Advertising Company A's public block
+
+At first I was confused about how a router can announce a prefix when the interface isn't "in BGP." The thing I learned is that BGP doesn't run on interfaces. The `network` command just says: *if this prefix is in my routing table, put it in my BGP table and announce it to my neighbors.* That's how INTERNET announces its loopback networks, since each loopback is a connected route.
+
+Company A needs something to announce too, and it should be its **public block**, not an internal loopback. Nobody announces internal router loopbacks to an ISP, and ISPs filter anything longer than a /24 anyway. I used a **static route to Null0** as the anchor. Null0 is a discard interface, so the route exists without any real device behind it, and real companies do this when they announce a block.
+
+_to be contd_
