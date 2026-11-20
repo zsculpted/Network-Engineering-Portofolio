@@ -451,6 +451,7 @@ show ip bgp summary
 **Both ISP**
 <img width="1895" height="508" alt="image" src="https://github.com/user-attachments/assets/6eced275-5dd7-4ea0-94bf-726b79a26af3" />
 **Internet**
+
 <img width="937" height="502" alt="image" src="https://github.com/user-attachments/assets/cd3750e5-41e1-4b51-945d-9772039925d5" />
 
 
