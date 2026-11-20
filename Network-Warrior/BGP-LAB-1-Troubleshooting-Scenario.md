@@ -1,38 +1,27 @@
-# BGP Lab: Path Selection, Failover, and Troubleshooting
+# BGP Lab 1: Path Selection, Failover, and Troubleshooting
 
 *This is a companion page to my dual-ISP BGP lab. Quick recap: Company A (AS 65001) connects to two ISPs (ISP-Alpha AS 65010, ISP-BETA AS 65020) through two edge routers, EDGE-1 and EDGE-2. Inside, OSPF carries internal routes and iBGP with two route reflectors (RR1 and RR2) shares what the edges learn. A simulated internet router (AS 65100) announces `8.8.8.8/32` and `9.9.9.9/32`, and my public block `203.0.113.0/24` is announced by both edges. A DMZ server (`203.0.113.10`) hangs off RR1.*
 
-[See this page to see how I build this BGP Lab](Network-Warrior/Border-Gateway-Protocol-LAB-1.md)
+[CLICK THIS to see how I build this BGP Lab](Network-Warrior/Border-Gateway-Protocol-LAB-1.md)
 
 <img width="847" height="741" alt="Screenshot 2026-11-20 153352" src="https://github.com/user-attachments/assets/8f5e4dde-98a0-41b5-bcdf-e346a2cdbe6e" />
 
 
 ## Step 5: Choosing Between the ISPs and Testing Failover
 
-Company A now has two paths to the same destinations, one through each ISP. This is the BGP concept that made me want to build the lab.
+Now that both ISPs lead to the same destinations, Company A has two paths to `8.8.8.8` and `9.9.9.9`. This is the BGP concept that made me want to build the lab.
 
-### What happens by default
+#### What happens by default
 
-With no tuning, both paths to `8.8.8.8` look equal to BGP: the same Local Preference (100) and the same AS_PATH length (`65010 65100` vs `65020 65100`). BGP falls through to a later tie-breaker and picks one. I tested it with a traceroute from my DMZ server:
+With no tuning, each edge tends to use the path through **its own ISP**. Both paths have the same Local Preference (100) and the same AS_PATH length (`65010 65100` vs `65020 65100`), so BGP falls to a tie-breaker: a route learned over eBGP beats one learned over iBGP.
 
-```
-traceroute 8.8.8.8
-```
+#### Making ISP-Alpha the preferred exit with Local Preference
 
-| Hop | Device |
-|---|---|
-| 1 | RR1 (`203.0.113.1`) |
-| 2 | EDGE-2 (`10.1.3.1`) |
-| 3 | ISP-BETA (`172.16.20.1`) |
-| 4 | INTERNET (`172.16.101.2`) |
+I wanted all of Company A to exit through ISP-Alpha, with ISP-BETA as the backup. At first when I did traceroute 8.8.8.8 on DMZ SRV, it seems like ISP-BETA is the prefered route.
 
-The traffic left through **EDGE-2 and ISP-BETA**, even though ISP-Alpha was also available. I had no say in the choice, which is the problem with leaving it to the tie-breakers.
+<img width="933" height="202" alt="image" src="https://github.com/user-attachments/assets/4655a99c-8705-467d-b007-9942864e26cc" />
 
-<!-- Paste the first traceroute screenshot here -->
-
-### Choosing ISP-Alpha as the preferred exit with Local Preference
-
-I wanted all of Company A to exit through ISP-Alpha, with ISP-BETA as the backup. For that I used **Local Preference**: a higher number wins, the default is 100, and it's shared with every iBGP router, so the whole AS agrees on the exit. It's also checked **early** in BGP's decision process, before the tie-breakers that picked EDGE-2. I set it to 200 on the routes EDGE-1 learns from ISP-Alpha.
+To change that I used **Local Preference**: a higher number wins, the default is 100, and it's shared with every iBGP router, so the whole AS agrees on the exit. I set it to 200 on the routes EDGE-1 learns from ISP-Alpha.
 
 **EDGE-1 (AS 65001)**
 ```
@@ -46,32 +35,11 @@ router bgp 65001
 clear ip bgp 172.16.10.1 soft in
 ```
 
-The `clear ... soft in` matters. A route-map change does nothing until the routes are re-processed.
+I did traceroute on DMZ-SRV as well as `show ip bgp 8.8.8.8` on EDGE-2, now it showed the best path going through EDGE-1 (next hop `1.1.1.1`) with local preference 200, even though EDGE-2 has its own direct path to ISP-BETA. Local Preference is checked before the "prefer eBGP" tie-breaker, so it wins.
 
-### Checking that it worked
+<img width="931" height="188" alt="image" src="https://github.com/user-attachments/assets/542edcdb-9e2c-4d90-83d0-7dec75852d02" />
 
-On RR1:
-
-```
-show ip bgp 8.8.8.8
-```
-
-The path via `1.1.1.1` (EDGE-1) should show `LocPrf 200` and the best-path marker, and the path via `2.2.2.2` should still show 100.
-
-<!-- Paste `show ip bgp 8.8.8.8` from RR1 here -->
-
-Then I ran the same traceroute again:
-
-| Hop | Before | After |
-|---|---|---|
-| 1 | RR1 (`203.0.113.1`) | RR1 (`203.0.113.1`) |
-| 2 | EDGE-2 (`10.1.3.1`) | **EDGE-1** (`10.1.1.1`) |
-| 3 | ISP-BETA (`172.16.20.1`) | **ISP-Alpha** (`172.16.10.1`) |
-| 4 | INTERNET (`172.16.101.2`) | INTERNET (`172.16.100.2`) |
-
-The exit moved from EDGE-2 and ISP-BETA to EDGE-1 and ISP-Alpha, and the only thing I changed was Local Preference. EDGE-2 has its own direct path to ISP-BETA, but it forwards through EDGE-1 anyway, because Local Preference is checked before the "prefer eBGP over iBGP" rule.
-
-<!-- Paste the second traceroute screenshot here -->
+<img width="931" height="490" alt="image" src="https://github.com/user-attachments/assets/04ea67ec-53f2-4b00-a054-262645c4fdd2" />
 
 ### Failover test
 
@@ -93,7 +61,7 @@ What I expected, and then checked:
 
 Then `no shutdown` on the interface, and the traffic should move back to ISP-Alpha because of the higher Local Preference. I didn't change any configuration to make this happen, and that automatic failover is the whole reason BGP and multihoming exist.
 
-<!-- Paste the ping output, `show ip bgp 8.8.8.8` during the failure, and the traceroute after failover here -->
+
 
 ### Two things I learned about this
 
@@ -102,7 +70,7 @@ Then `no shutdown` on the interface, and the traffic should move back to ISP-Alp
 
 ---
 
-## Troubleshooting Scenarios
+## Troubleshooting Scenarios [SCENARIOS CREATED BY CLAUDE.AI]
 
 An L1 engineer spends more time fixing BGP than building it. This section has two parts: problems I hit by accident while building, with the real symptoms, and scenarios I'm breaking on purpose to practice.
 
@@ -118,7 +86,7 @@ An L1 engineer spends more time fixing BGP than building it. This section has tw
 
 The second one taught me the most. A static route has an administrative distance of 1 and OSPF has 110, but distance only matters between routes for the **same prefix**. A `/24` and a `/28` are different prefixes, so the longer match always wins. My mistake was making both `/28`.
 
-<!-- Add output snippets for the best ones -->
+
 
 ### Scenarios I'm breaking on purpose
 
