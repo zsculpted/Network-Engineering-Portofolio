@@ -418,4 +418,153 @@ show ip bgp summary
 
 <img width="937" height="502" alt="image" src="https://github.com/user-attachments/assets/cd3750e5-41e1-4b51-945d-9772039925d5" />
 
+### Step 4: Troubleshooting 1 - Fixing the next hop
 
+I saw this problem on RR1 before I fixed it. `show ip bgp` listed `8.8.8.8/32` and `9.9.9.9/32` with `* i` in front, but **no `>`**, and the next hop was `172.16.10.1`, ISP-Alpha's address. The AS_PATH (`65010 65100`) was right, but the route wasn't marked best.
+
+<img width="942" height="280" alt="image" src="https://github.com/user-attachments/assets/3724d6b8-1382-4ec1-93c3-8fe3d1afc776" />
+
+This problem happened because I deliberately kept the ISP links (`172.16.x.x`) **out of OSPF**. Here's what went wrong:
+
+1. **EDGE-1 learns the route from ISP-Alpha.** ISP-Alpha tells EDGE-1, "to reach `8.8.8.8`, send traffic to me at `172.16.10.1`." So the route's **next hop** (the next router to send traffic to) is `172.16.10.1`.
+2. **EDGE-1 passes the route to RR1 over iBGP.** By default, iBGP does **not** change the next hop, so RR1 receives the route still saying "next hop: `172.16.10.1`."
+3. **RR1 checks whether it can reach that next hop.** `172.16.10.0/30` isn't in OSPF, so RR1 has no route to `172.16.10.1`. It can't use the route, so it never marks it best (no `>`).
+
+```
+ISP-Alpha ──────── EDGE-1 ──────── RR1
+172.16.10.1       (knows ISP)    "How do I reach 172.16.10.1?
+                                  I have no idea."  ✗
+```
+#### Troubleshooting process
+
+**The correct one I believe** is for EDGE-1 to say "send it to **me** instead," and I can reach EDGE-1 because its loopback is in OSPF.
+
+The solution is `next-hop-self` on the edges. It tells the edge to put **itself** as the next hop when it advertises to its iBGP neighbors, and the RRs already know how to reach the edges' loopbacks through OSPF.
+
+**EDGE-1 (AS 65001)**
+```
+router bgp 65001
+ neighbor 3.3.3.3 next-hop-self
+ neighbor 4.4.4.4 next-hop-self
+```
+
+**EDGE-2 (AS 65001)**
+```
+router bgp 65001
+ neighbor 3.3.3.3 next-hop-self
+ neighbor 4.4.4.4 next-hop-self
+```
+
+**A problem occured on Edge-2**
+
+<img width="799" height="395" alt="image" src="https://github.com/user-attachments/assets/77368142-b512-4872-bc11-59a5b06a8c32" />
+
+After seeing this, I assume I missed to add 3.3.3.3 as BGP neighbor. So i did `sh run | sect router bgp`
+
+<img width="932" height="159" alt="image" src="https://github.com/user-attachments/assets/33275d7c-db5b-434c-95d9-e3f72688df99" />
+
+My assumption was correct. Maybe because I use pnetlab and forgot to save the running config that's why it got removed. 
+
+After adding everything you can see at the very bottom the log for adj appeared. That also explains why RR1 only showed one path per prefix, via 172.16.10.1, because EDGE-2 was never talking to the route reflectors.
+
+<img width="938" height="457" alt="image" src="https://github.com/user-attachments/assets/fcf241f3-0738-4c6c-bba6-e0cf191f2846" />
+
+I also did the `show` command on HQ-RR1 just in case every router config is not saved, luckly it doesnt.
+
+<img width="929" height="262" alt="image" src="https://github.com/user-attachments/assets/63413ec1-b11e-498a-b4ec-c9a1e54c9cb8" />
+
+
+
+To push the update without waiting:
+```
+clear ip bgp * soft
+```
+
+#### Checking that it worked
+
+```
+show ip bgp
+show ip route bgp
+```
+
+<img width="934" height="423" alt="image" src="https://github.com/user-attachments/assets/ce8657fb-6393-4a64-9727-8c59dca2e9c5" />
+
+<img width="928" height="423" alt="image" src="https://github.com/user-attachments/assets/c4d2c2a7-6e9f-4930-8217-d8e72722076d" />
+
+
+Both RR1 and RR2, the internet routes now had `*>i`, and the next hop had changed from the ISP's address to the edge's loopback (`1.1.1.1` or `2.2.2.2`). They also showed up in `show ip route bgp`, which means they're actually usable. `203.0.113.0/24` was in the table too, coming from the edges.
+
+
+#### The end-to-end test
+
+With the next hop fixed, I ran the test I couldn't run before, from my DMZ server:
+
+```
+ping 8.8.8.8
+ping 9.9.9.9
+```
+
+<img width="921" height="244" alt="image" src="https://github.com/user-attachments/assets/f2259a8f-d447-4bfa-9947-f143d4e72f42" />
+
+## It worked
+
+he packet went DMZ-SRV → RR1 → an edge → an ISP → INTERNET, and the reply came back because INTERNET learned `203.0.113.0/24` through BGP from both ISPs. Inside Company A, the edges know the specific route to my server (`203.0.113.0/28` through OSPF), so the reply finds its way back to DMZ-SRV.
+
+### Step 5: Choosing Between the ISPs and Testing Failover
+
+Now that both ISPs lead to the same destinations, Company A has two paths to `8.8.8.8` and `9.9.9.9`. This is the BGP concept that made me want to build the lab.
+
+#### What happens by default
+
+With no tuning, each edge tends to use the path through **its own ISP**. Both paths have the same Local Preference (100) and the same AS_PATH length (`65010 65100` vs `65020 65100`), so BGP falls to a tie-breaker: a route learned over eBGP beats one learned over iBGP.
+
+#### Making ISP-Alpha the preferred exit with Local Preference
+
+I wanted all of Company A to exit through ISP-Alpha, with ISP-BETA as the backup. At first when I did traceroute 8.8.8.8 on DMZ SRV, it seems like ISP-BETA is the prefered route.
+
+<img width="933" height="202" alt="image" src="https://github.com/user-attachments/assets/4655a99c-8705-467d-b007-9942864e26cc" />
+
+To change that I used **Local Preference**: a higher number wins, the default is 100, and it's shared with every iBGP router, so the whole AS agrees on the exit. I set it to 200 on the routes EDGE-1 learns from ISP-Alpha.
+
+**EDGE-1 (AS 65001)**
+```
+route-map PREFER-ALPHA permit 10
+ set local-preference 200
+!
+router bgp 65001
+ neighbor 172.16.10.1 route-map PREFER-ALPHA in
+```
+```
+clear ip bgp 172.16.10.1 soft in
+```
+
+I did traceroute on DMZ-SRV as well as `show ip bgp 8.8.8.8` on EDGE-2, now it showed the best path going through EDGE-1 (next hop `1.1.1.1`) with local preference 200, even though EDGE-2 has its own direct path to ISP-BETA. Local Preference is checked before the "prefer eBGP" tie-breaker, so it wins.
+
+<img width="931" height="188" alt="image" src="https://github.com/user-attachments/assets/542edcdb-9e2c-4d90-83d0-7dec75852d02" />
+
+<img width="931" height="490" alt="image" src="https://github.com/user-attachments/assets/04ea67ec-53f2-4b00-a054-262645c4fdd2" />
+
+
+
+#### Failover test and troubleshooting scenario
+
+To simulate ISP-Alpha going down, I shut the link on EDGE-1:
+
+```
+interface GigabitEthernet0/0
+ shutdown
+```
+
+The eBGP session to ISP-Alpha dropped, the routes were withdrawn, and `show ip bgp 8.8.8.8` on both edges switched to the ISP-BETA path. While this was happening, I kept pinging `8.8.8.8` from DMZ-SRV. It lost a few packets during the switch, then recovered on its own. Then I ran `no shutdown` and watched everything move back to ISP-Alpha. I didn't change any configuration to make it happen, and that automatic failover is the whole reason BGP and multihoming exist.
+
+One thing I noticed: Local Preference only controls **outbound** traffic, meaning how Company A leaves. How the internet reaches **me** is decided by INTERNET and the ISPs. Influencing that needs something like AS_PATH prepending, which is on my list below.
+
+<!-- Paste output from before, during, and after the shutdown here -->
+
+---
+
+## Troubleshooting Scenarios
+
+I learned an L1 engineer spends more time noticing and fixing BGP rather than building it. So next time I want to create scenario and broke some connection on purpose to try to the fix. 
+
+_to be continued_
