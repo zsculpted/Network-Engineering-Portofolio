@@ -11,7 +11,7 @@ I’ve completed my CCNA, but most of what I studied covered interior routing pr
 <img width="1280" height="1222" alt="image" src="https://github.com/user-attachments/assets/f7aeff68-ab5c-438d-af98-050abb860877" />
 
 **This is how i put it on lab environemnt.** 
-This topology will evolve as the lab grows and will pretty much changes over the course (Coming from the furute: _the topology above already updated_!). 
+This topology will evolve as the lab grows and will pretty much changes over the course. 
 
 <img width="628" height="622" alt="Screenshot 2026-11-18 211819" src="https://github.com/user-attachments/assets/f2fbc94b-8452-4017-bff3-dc903c957f57" />
 
@@ -28,8 +28,7 @@ I'm using the **private 16-bit ASN range (64512 to 65534)**.
 
 ### IP Addressing
 
-<img width="914" height="761" alt="image" src="https://github.com/user-attachments/assets/d1f33766-a817-425e-8821-fc742a1899f3" />
-
+<img width="825" height="739" alt="image" src="https://github.com/user-attachments/assets/31f3e16d-3c39-4834-9237-be9fef03cd00" />
 
 That's all for the IP Addressing, next we're moving to the real thing, that is BGP. 
 
@@ -422,6 +421,3 @@ show ip bgp summary
 <img width="937" height="502" alt="image" src="https://github.com/user-attachments/assets/cd3750e5-41e1-4b51-945d-9772039925d5" />
 
 
-That HQ-RR routersl is the interesting part. The RRs trust `203.0.113.0/24`, because it was created inside my AS and the next hop is an edge they can reach. But the internet routes still point at an ISP address (`172.16.10.1` or `172.16.20.1`) that the RRs have no route to. Fixing that is Step 4.
-
-_to be ctd_
