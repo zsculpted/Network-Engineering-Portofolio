@@ -516,4 +516,4 @@ I learned an L1 engineer spends more time noticing and fixing BGP rather than bu
 
 **So I make a separate page for that**. 
 
-[BGP LAB 1 - Path Selection and Troubleshooting Scenario](PROJECTS.md)
+!! It seems like I cannot embedded or mention the link here, so go to my **project list on the read.me page** and you'll find it in **Layer Layer 3 - 4 Networking** section with the name **BGP LAB 1 - Path Selection and Troubleshooting Scenario**.
